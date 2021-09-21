@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../engine.js"],
+  "sourcesContent": ["class Engine {\n  constructor() {\n    this.datasets = []\n    this.init = new Date()\n  }\n\n  list() {\n    return this.datasets\n  }\n\n  exists(d) {\n    return this.datasets.indexOf(d) !== -1 ? true : false\n  }\n\n  size(data) {\n    return Buffer.byteLength(data) < 4 * 1024 * 1024\n  }\n}\n\nfunction createEngine() {\n  return new Engine()\n}\n\nexport { createEngine }\n"],
+  "mappings": "mPAAA,2CAAa,CACX,aAAc,CACZ,KAAK,SAAW,GAChB,KAAK,KAAO,GAAI,MAGlB,MAAO,CACL,MAAO,MAAK,SAGd,OAAO,EAAG,CACR,MAAO,MAAK,SAAS,QAAQ,KAAO,GAGtC,KAAK,EAAM,CACT,MAAO,QAAO,WAAW,GAAQ,EAAI,KAAO,OAIhD,YAAwB,CACtB,MAAO,IAAI",
+  "names": []
+}

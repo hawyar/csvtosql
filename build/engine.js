@@ -1,0 +1,2 @@
+var n=Object.defineProperty;var i=t=>n(t,"__esModule",{value:!0});var c=typeof require!="undefined"?require:t=>{throw new Error('Dynamic require of "'+t+'" is not supported')};var a=(t,e)=>{i(t);for(var s in e)n(t,s,{get:e[s],enumerable:!0})};a(exports,{createEngine:()=>u});var r=class{constructor(){this.datasets=[],this.init=new Date}list(){return this.datasets}exists(e){return this.datasets.indexOf(e)!==-1}size(e){return Buffer.byteLength(e)<4*1024*1024}};function u(){return new r}0&&(module.exports={createEngine});
+//# sourceMappingURL=engine.js.map
