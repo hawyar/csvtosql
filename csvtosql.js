@@ -117,7 +117,7 @@ Usage:
       console.log(`${new Date().getTime() - this._init.getTime()} ms elapsed`)
       const sql = generateSQL()
 
-      fs.writeFile('./insert.sql', sql, (err) => {
+      fs.writeFile(`./${this.tableName}.sql`, sql, (err) => {
         if (err) throw err
         console.log('SQL file created')
       })
