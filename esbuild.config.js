@@ -3,8 +3,8 @@ import { nodeExternalsPlugin } from 'esbuild-node-externals'
 
 esbuild
   .build({
-    entryPoints: ['engine.js'],
-    outfile: 'build/engine.js',
+    entryPoints: ['csvtosql.js'],
+    outfile: 'build/csvtosql.js',
     bundle: true,
     minify: true,
     platform: 'node',
