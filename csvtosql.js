@@ -12,10 +12,9 @@ const fs = require('fs')
     args: process.argv,
   }
 
-  emitter.on('start', () => console.log('starting engine'))
+  emitter.on('start', () => console.log('starting conversion'))
 
   csvtosql.call(ctx)
-  emitter.emit('start', ctx)
 })()
 
 async function csvtosql() {
@@ -55,6 +54,7 @@ Usage:
       )
     } else if (args[args.indexOf('-s') + 1].endsWith('.csv')) {
       this.source = args[args.indexOf('-s') + 1]
+      this.tableName = this.source.split('/').pop().split('.')[0].toLowerCase()
       console.log(`source ${this.source}`)
     }
   }
@@ -92,6 +92,22 @@ Usage:
           if (col.match(isEmpty)) return `${col.toLowerCase()} TEXT`
           return `${col.toLowerCase()} TEXT`
         })
+      } else {
+        const values = line.split(',').map((val) => {
+          if (val.match(isEmail)) return `'${val}'`
+          if (val.match(isNumber)) return `${val}`
+          if (val.match(isDate)) return `'${val}'`
+          if (val.match(isTime)) return `'${val}'`
+          if (val.match(isDateTime)) return `'${val}'`
+          if (val.match(isBoolean)) return `${val}`
+          if (val.match(isString)) return `'${val}'`
+          if (val.match(isEmpty)) return `NULL`
+          return `'${val}'`
+        })
+        const sql = `INSERT INTO ${this.tableName} (${this.headers.join(
+          ','
+        )}) VALUES (${values.join(',')}); \n \n`
+        this.sql += sql
       }
     })
     .on('end', () => {
@@ -99,20 +115,24 @@ Usage:
       console.log(`${this.headers.length} headers found`)
       console.log(`${count} lines processed`)
       console.log(`${new Date().getTime() - this._init.getTime()} ms elapsed`)
-      const createstat = createTable()
+      const sql = generateSQL()
 
-      fs.writeFile('./test.sql', createstat, (err) => {
+      fs.writeFile('./insert.sql', sql, (err) => {
         if (err) throw err
-        console.log('Database created!')
+        console.log('SQL file created')
       })
     })
+    .once('readable', () => {
+      emitter.emit('start')
+    })
+    .on('error', (err) => {
+      throw new Error(err)
+    })
 
-  const createTable = () => {
-    const tableName = this.source.split('/').pop().split('.')[0]
+  const generateSQL = () => {
     const inStatement = `${this.headers.map((h) => `${h}`)}`
-    const createStatement = `CREATE TABLE IF NOT EXISTS ${tableName} (${inStatement})`
-    console.log(createStatement)
-    return createStatement
+    const create = `CREATE TABLE IF NOT EXISTS ${this.tableName} (${inStatement})`
+    return `${create};\n${this.sql}`
   }
 }
 
