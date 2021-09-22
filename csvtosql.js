@@ -1,5 +1,6 @@
-// import fs from 'fs/promises'
-// import split2 from 'split2'
+import { access } from 'fs/promises'
+import { constants, createReadStream } from 'fs'
+import split2 from 'split2'
 import events from 'events'
 
 const emitter = new events.EventEmitter()
@@ -9,11 +10,14 @@ const emitter = new events.EventEmitter()
     _init: new Date(),
     args: process.argv,
   }
+
+  emitter.on('start', () => console.log('stating engine'))
+
   csvtosql.call(ctx)
   emitter.emit('start', ctx)
 })()
 
-function csvtosql() {
+async function csvtosql() {
   const { args } = this
 
   const usage = () =>
@@ -49,75 +53,59 @@ Usage:
 	 `)
     } else if (args[args.indexOf('-s') + 1].endsWith('.csv')) {
       this.source = args[args.indexOf('-s') + 1]
+      console.log(`source ${this.source}`)
     }
   }
+
+  await access(this.source, constants.R_OK | constants.W_OK).catch((e) => {
+    throw new Error(`${this.source} is not readable or writable`)
+  })
+
+  let count = 0
+  const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  const isNumber = /^[0-9]+$/
+  const isDate = /^\d{4}-\d{2}-\d{2}$/
+  const isTime = /^\d{2}:\d{2}:\d{2}$/
+  const isDateTime = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/
+  const isBoolean = /^(true|false)$/
+  const isString = /^[^\s]+$/
+  const isEmpty = /^$/
+
+  createReadStream(this.source)
+    .pipe(split2())
+    .on('data', (line) => {
+      count++
+      if (count === 1) {
+        // this code is a menace
+        this.headers = line.split(',').map((col) => {
+          if (col.match(/^[0-9]+$/)) return `${col} INT`
+
+          if (col.match(/^[0-9]+\.[0-9]+$/)) return `${col} FLOAT`
+          if (col.match(isEmail)) return `${col} TEXT`
+          if (col.match(isNumber)) return `${col} INT`
+          if (col.match(isDate)) return `${col} DATE`
+          if (col.match(isTime)) return `${col} TIME`
+          if (col.match(isDateTime)) return `${col} DATETIME`
+          if (col.match(isBoolean)) return `${col} BOOLEAN`
+          if (col.match(isString)) return `${col} TEXT`
+          if (col.match(isEmpty)) return `${col} TEXT`
+          return `${col} TEXT`
+        })
+      }
+    })
+    .on('end', () => {
+      console.log(`File processed ${this.source}`)
+      console.log(`${this.headers.length} headers found`)
+      console.log(`${count} lines processed`)
+      console.log(`${new Date().getTime() - this._init.getTime()} ms elapsed`)
+      console.log(this)
+      createTable()
+    })
+
+  const createTable = () => {
+    const inStatement = `${this.headers.map((h) => `${h}`)}`
+    const createStatement = `CREATE TABLE IF NOT EXISTS ${'HUHHH'} (${inStatement})`
+    console.log(createStatement)
+    return createStatement
+  }
 }
-
-// fs.stat(args[3], (err, stats) => {
-//   if (err) {
-//     console.log(chalk.red(err))
-//     process.exit(1)
-//   }
-//   if (stats.isFile()) {
-//     this.fileSrc = args[3]
-//     if (args[4] === '--table' || args[4] === '-t') {
-//       this.tableName = args[5]
-//     } else {
-//       throw new Error(chalk.red(`Please provide a table name`))
-//     }
-//   } else if (stats.isDirectory()) {
-//     this.dirSrc = args[3]
-//     if (args[4] === '--table' || args[4] === '-t') {
-//       throw new Error(
-//         chalk.red(
-//           `Don't include table names, for now table names are generated from file name`
-//         )
-//       )
-//     }
-//   } else {
-//     this.dirSrc = process.cwd()
-//   }
-// })
-//   emitter.on('start', () => {
-//     // just some pretty logging
-//     console.log('\x1b[35m', 'Starting engine with input: \n', '\x1b[0m')
-//     console.log(JSON.stringify(this, null, 2))
-//   })
-
-// if (this.fileSrc) {
-//   console.log('ss')
-// } else {
-//   const files = fs.readdirSync(this.dirSrc)
-
-//   const csvFiles = files.filter((file) => {
-//     return file.split('.').pop() === 'csv'
-//   })
-
-//   csvFiles.forEach((file) => {
-//     const filePath = `${this.dirSrc}/${file}`
-//     const fileStream = fs.createReadStream(filePath)
-//     const splitStream = fileStream.pipe(split2())
-//     let count = 0
-
-//     splitStream
-//       .on('data', (line) => {
-//         count++
-//         if (count === 1) {
-//           this.headers = line.split(',').map((el) => {
-//             return { name: el, type: 'STRING' }
-//           })
-//         }
-//       })
-//       .on('end', () => {
-//         console.log(`File processed ${chalk.bgCyan(file)}`)
-
-//         const create = createTable()
-//         console.log(create)
-//       })
-//   })
-// }
-//   const createTable = () => {
-//     const inStatement = `${this.headers.map((h) => `${h.name} ${h.type} `)}`
-//     const createStatement = `CREATE TABLE IF NOT EXISTS ${'HUHHH'} (${inStatement})`
-//     return createStatement
-//   }
