@@ -79,7 +79,6 @@ Usage:
     .on('data', (line) => {
       count++
       if (count === 1) {
-        // this is a menace hahaha
         this.headers = line.split(',').map((col) => {
           if (col.match(/^[0-9]+$/)) return `${col} INT`
           if (col.match(/^[0-9]+\.[0-9]+$/)) return `${col} FLOAT`
@@ -101,8 +100,6 @@ Usage:
       console.log(`${count} lines processed`)
       console.log(`${new Date().getTime() - this._init.getTime()} ms elapsed`)
       const createstat = createTable()
-
-      // create a .db sqlite file
 
       fs.writeFile('./test.sql', createstat, (err) => {
         if (err) throw err
