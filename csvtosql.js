@@ -1,9 +1,10 @@
-import { access } from 'fs/promises'
-import { constants, createReadStream } from 'fs'
-import split2 from 'split2'
-import events from 'events'
-
+const { access } = require('fs/promises')
+const { constants, createReadStream } = require('fs')
+const split2 = require('split2')
+const events = require('events')
+const pkjson = require('./package.json')
 const emitter = new events.EventEmitter()
+const fs = require('fs')
 
 ;(() => {
   const ctx = {
@@ -11,7 +12,7 @@ const emitter = new events.EventEmitter()
     args: process.argv,
   }
 
-  emitter.on('start', () => console.log('stating engine'))
+  emitter.on('start', () => console.log('starting engine'))
 
   csvtosql.call(ctx)
   emitter.emit('start', ctx)
@@ -22,12 +23,13 @@ async function csvtosql() {
 
   const usage = () =>
     process.stdout.write(` 
-Please provide a path to the file you want to convert!
+	${pkjson.name} v${pkjson.version}
+	${pkjson.description}
 Usage:
   	--source | -s [dir] select the source file or directory
   	--help | -h [dir] get help
   	--version | -v [dir] get the current version
-  	`)
+  	\n`)
 
   if (args.length < 3) {
     usage()
@@ -39,7 +41,7 @@ Usage:
   }
 
   if (args.find((arg) => arg === '--version' || arg === '-v')) {
-    process.stdout.write(`v1.0.0 - csvtosql`)
+    process.stdout.write(`${pkjson.name} v${pkjson.version}\n`)
     process.exit(0)
   }
 
@@ -48,9 +50,9 @@ Usage:
       args[args.indexOf('--source') + 1] === undefined ||
       args[args.indexOf('-s') + 1] === undefined
     ) {
-      process.stdout.write(`
-	 --source | -s [dir] select the source file or directory
-	 `)
+      process.stdout.write(
+        `--source | -s [dir] select the source file or directory \n`
+      )
     } else if (args[args.indexOf('-s') + 1].endsWith('.csv')) {
       this.source = args[args.indexOf('-s') + 1]
       console.log(`source ${this.source}`)
@@ -58,7 +60,8 @@ Usage:
   }
 
   await access(this.source, constants.R_OK | constants.W_OK).catch((e) => {
-    throw new Error(`${this.source} is not readable or writable`)
+    // new Error to send back stack trace
+    throw new Error(`${this.source} is not readable or writable \n ${e}\n`)
   })
 
   let count = 0
@@ -76,20 +79,19 @@ Usage:
     .on('data', (line) => {
       count++
       if (count === 1) {
-        // this code is a menace
+        // this is a menace hahaha
         this.headers = line.split(',').map((col) => {
           if (col.match(/^[0-9]+$/)) return `${col} INT`
-
           if (col.match(/^[0-9]+\.[0-9]+$/)) return `${col} FLOAT`
-          if (col.match(isEmail)) return `${col} TEXT`
+          if (col.match(isEmail)) return `${col.toLowerCase()} TEXT`
           if (col.match(isNumber)) return `${col} INT`
           if (col.match(isDate)) return `${col} DATE`
           if (col.match(isTime)) return `${col} TIME`
           if (col.match(isDateTime)) return `${col} DATETIME`
           if (col.match(isBoolean)) return `${col} BOOLEAN`
-          if (col.match(isString)) return `${col} TEXT`
-          if (col.match(isEmpty)) return `${col} TEXT`
-          return `${col} TEXT`
+          if (col.match(isString)) return `${col.toLowerCase()} TEXT`
+          if (col.match(isEmpty)) return `${col.toLowerCase()} TEXT`
+          return `${col.toLowerCase()} TEXT`
         })
       }
     })
@@ -98,14 +100,23 @@ Usage:
       console.log(`${this.headers.length} headers found`)
       console.log(`${count} lines processed`)
       console.log(`${new Date().getTime() - this._init.getTime()} ms elapsed`)
-      console.log(this)
-      createTable()
+      const createstat = createTable()
+
+      // create a .db sqlite file
+
+      fs.writeFile('./test.sql', createstat, (err) => {
+        if (err) throw err
+        console.log('Database created!')
+      })
     })
 
   const createTable = () => {
+    const tableName = this.source.split('/').pop().split('.')[0]
     const inStatement = `${this.headers.map((h) => `${h}`)}`
-    const createStatement = `CREATE TABLE IF NOT EXISTS ${'HUHHH'} (${inStatement})`
+    const createStatement = `CREATE TABLE IF NOT EXISTS ${tableName} (${inStatement})`
     console.log(createStatement)
     return createStatement
   }
 }
+
+module.exports = csvtosql
