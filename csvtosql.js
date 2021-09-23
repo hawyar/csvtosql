@@ -1,10 +1,9 @@
-const { access } = require('fs/promises')
-const { constants, createReadStream } = require('fs')
+// const { access } = require('fs').promises
+const fs = require('fs')
 const split2 = require('split2')
 const events = require('events')
 const pkjson = require('./package.json')
 const emitter = new events.EventEmitter()
-const fs = require('fs')
 
 ;(() => {
   const ctx = {
@@ -55,13 +54,14 @@ Usage:
     } else if (args[args.indexOf('-s') + 1].endsWith('.csv')) {
       this.source = args[args.indexOf('-s') + 1]
       this.tableName = this.source.split('/').pop().split('.')[0].toLowerCase()
-      console.log(`source ${this.source}`)
+      console.log(`source: ${this.source}`)
     }
   }
 
-  await access(this.source, constants.R_OK | constants.W_OK).catch((e) => {
-    // new Error to send back stack trace
-    throw new Error(`${this.source} is not readable or writable \n ${e}\n`)
+  fs.access(this.source, fs.constants.R_OK | fs.constants.W_OK, (err) => {
+    if (this.source === undefined || err) {
+      throw new Error(`${this.source} is not readable or writable \n ${err}\n`)
+    }
   })
 
   let count = 0
@@ -74,7 +74,7 @@ Usage:
   const isString = /^[^\s]+$/
   const isEmpty = /^$/
 
-  createReadStream(this.source)
+  fs.createReadStream(this.source)
     .pipe(split2())
     .on('data', (line) => {
       count++
@@ -111,7 +111,6 @@ Usage:
       }
     })
     .on('end', () => {
-      console.log(`File processed ${this.source}`)
       console.log(`${this.headers.length} headers found`)
       console.log(`${count} lines processed`)
       console.log(`${new Date().getTime() - this._init.getTime()} ms elapsed`)

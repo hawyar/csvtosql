@@ -7,19 +7,19 @@
     "lint": "npx eslint csvtosql.js",
     "test": "tap --no-coverage --reporter=specy -J --color",
     "test:coverage": "npm test -- --coverage-report=html",
-    "build": "node esbuild.config.js"
+    "build": "esbuild csvtosql.js --bundle --platform=node --target=node10.4 --outfile=build/csvtosql.js"
   },
   "keywords": [],
   "author": "hawyar",
   "license": "ISC",
   "devDependencies": {
-    "esbuild-node-externals": "^1.3.0",
+    "@swc/cli": "^0.1.50",
+    "@swc/core": "^1.2.89",
     "eslint": "^7.32.0",
     "tap": "^15.0.9"
   },
   "dependencies": {
-    "esbuild": "^0.12.28",
-    "pg": "^8.7.1",
+    "esbuild": "^0.13.1",
     "split2": "^3.2.2"
   }
 }
