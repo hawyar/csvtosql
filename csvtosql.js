@@ -12,7 +12,6 @@ const emitter = new events.EventEmitter()
   }
 
   emitter.on('start', () => console.log('starting conversion'))
-
   csvtosql.call(ctx)
 })()
 
@@ -64,57 +63,58 @@ Usage:
     }
   })
 
-  let count = 0
-  const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   const isNumber = /^[0-9]+$/
-  const isDate = /^\d{4}-\d{2}-\d{2}$/
-  const isTime = /^\d{2}:\d{2}:\d{2}$/
-  const isDateTime = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/
   const isBoolean = /^(true|false)$/
-  const isString = /^[^\s]+$/
   const isEmpty = /^$/
 
-  fs.createReadStream(this.source)
-    .pipe(split2())
+  let count = 0
+  this.statement = ''
+
+  const stream = fs.createReadStream(this.source).pipe(split2())
+
+  stream
     .on('data', (line) => {
-      count++
-      if (count === 1) {
+      if (count === 0) {
         this.headers = line.split(',').map((col) => {
-          if (col.match(/^[0-9]+$/)) return `${col} INT`
-          if (col.match(/^[0-9]+\.[0-9]+$/)) return `${col} FLOAT`
-          if (col.match(isEmail)) return `${col.toLowerCase()} TEXT`
-          if (col.match(isNumber)) return `${col} INT`
-          if (col.match(isDate)) return `${col} DATE`
-          if (col.match(isTime)) return `${col} TIME`
-          if (col.match(isDateTime)) return `${col} DATETIME`
-          if (col.match(isBoolean)) return `${col} BOOLEAN`
-          if (col.match(isString)) return `${col.toLowerCase()} TEXT`
-          if (col.match(isEmpty)) return `${col.toLowerCase()} TEXT`
-          return `${col.toLowerCase()} TEXT`
+          return {
+            type: 'TEXT',
+            name: col.toLowerCase(),
+          }
         })
       } else {
         const values = line.split(',').map((val) => {
-          if (val.match(isEmail)) return `'${val}'`
-          if (val.match(isNumber)) return `${val}`
-          if (val.match(isDate)) return `'${val}'`
-          if (val.match(isTime)) return `'${val}'`
-          if (val.match(isDateTime)) return `'${val}'`
-          if (val.match(isBoolean)) return `${val}`
-          if (val.match(isString)) return `'${val}'`
-          if (val.match(isEmpty)) return `NULL`
-          return `'${val}'`
+          const removeQuotes = (str) => str.trim().replace(/^"(.*)"$/, '$1')
+
+          switch (val) {
+            case val.match(isEmpty):
+              return 'NULL'
+
+            case val.match(isNumber):
+              return `${removeQuotes(val)}`
+
+            case val.match(isBoolean):
+              return `${removeQuotes(val)}`
+
+            default:
+              return `'${removeQuotes(val)}'`
+          }
         })
-        const sql = `INSERT INTO ${this.tableName} (${this.headers.join(
-          ','
-        )}) VALUES (${values.join(',')}); \n \n`
-        this.sql += sql
+
+        this.statement += `INSERT INTO ${this.tableName} (${this.headers.map(
+          (col) => col.name
+        )}) VALUES (${values});\n`
+
+        if (line.split(',').find((val) => val === `''`)) {
+          console.log(`empty value in line ${count}`)
+        }
       }
+      count++
     })
     .on('end', () => {
       console.log(`${this.headers.length} headers found`)
       console.log(`${count} lines processed`)
       console.log(`${new Date().getTime() - this._init.getTime()} ms elapsed`)
-      const sql = generateSQL()
+      const sql = generate()
 
       fs.writeFile(`./${this.tableName}.sql`, sql, (err) => {
         if (err) throw err
@@ -128,10 +128,12 @@ Usage:
       throw new Error(err)
     })
 
-  const generateSQL = () => {
-    const inStatement = `${this.headers.map((h) => `${h}`)}`
-    const create = `CREATE TABLE IF NOT EXISTS ${this.tableName} (${inStatement})`
-    return `${create};\n${this.sql}`
+  const generate = () => {
+    const columns = this.headers.map(
+      (col) => `${col.name.replace(/\n/g, '')} ${col.type}`
+    )
+    const create = `CREATE TABLE IF NOT EXISTS ${this.tableName} (${columns})`
+    return `${create};\n${this.statement}`
   }
 }
 
