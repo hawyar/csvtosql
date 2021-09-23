@@ -2627,6 +2627,7 @@ var require_package = __commonJS({
         lint: "npx eslint csvtosql.js",
         test: "tap --no-coverage --reporter=specy -J --color",
         "test:coverage": "npm test -- --coverage-report=html",
+        "dump:sqlite": "sqlite3 example/de1_0_2009_beneficiary_summary_file_sample_1.db -init example/de1_0_2009_beneficiary_summary_file_sample_1.sql",
         build: "esbuild csvtosql.js --bundle --platform=node --target=node10.4 --outfile=build/csvtosql.js"
       },
       keywords: [],
@@ -2701,13 +2702,8 @@ Usage:
 `);
     }
   });
-  const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const isNumber = /^[0-9]+$/;
-  const isDate = /^\d{4}-\d{2}-\d{2}$/;
-  const isTime = /^\d{2}:\d{2}:\d{2}$/;
-  const isDateTime = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/;
   const isBoolean = /^(true|false)$/;
-  const isString = /^[^\s]+$/;
   const isEmpty = /^$/;
   let count = 0;
   this.statement = "";
@@ -2726,8 +2722,10 @@ Usage:
         switch (val) {
           case val.match(isEmpty):
             return "NULL";
-          case val.match(isEmail):
-            return `'${removeQuotes(val)}'`;
+          case val.match(isNumber):
+            return `${removeQuotes(val)}`;
+          case val.match(isBoolean):
+            return `${removeQuotes(val)}`;
           default:
             return `'${removeQuotes(val)}'`;
         }
@@ -2744,7 +2742,7 @@ Usage:
     console.log(`${count} lines processed`);
     console.log(`${new Date().getTime() - this._init.getTime()} ms elapsed`);
     const sql = generate();
-    fs.writeFile(`./${this.tableName}.sql`, sql, (err) => {
+    fs.writeFile(`./example/${this.tableName}.sql`, sql, (err) => {
       if (err)
         throw err;
       console.log("SQL file created");

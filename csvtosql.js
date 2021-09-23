@@ -1,4 +1,3 @@
-// const { access } = require('fs').promises
 const fs = require('fs')
 const split2 = require('split2')
 const events = require('events')
@@ -116,7 +115,7 @@ Usage:
       console.log(`${new Date().getTime() - this._init.getTime()} ms elapsed`)
       const sql = generate()
 
-      fs.writeFile(`./${this.tableName}.sql`, sql, (err) => {
+      fs.writeFile(`./example/${this.tableName}.sql`, sql, (err) => {
         if (err) throw err
         console.log('SQL file created')
       })
