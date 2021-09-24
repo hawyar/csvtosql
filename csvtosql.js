@@ -10,6 +10,7 @@ const emitter = new events.EventEmitter()
     args: process.argv,
   }
 
+  // it passes the context to the csvtosql function
   csvtosql.call(ctx)
 
   emitter.on('start', () => console.log('starting conversion'))
@@ -28,11 +29,7 @@ Usage:
   	--version | -v [dir] get the current version
   	\n`)
 
-  if (args.length < 3) {
-    usage()
-    process.exit(1)
-  }
-  if (args.find((arg) => arg === '--help' || arg === '-h')) {
+  if (args.length < 3 || args.find((arg) => arg === '--help' || arg === '-h')) {
     usage()
     process.exit(0)
   }
@@ -41,20 +38,20 @@ Usage:
     process.stdout.write(`${pkjson.name} v${pkjson.version}\n`)
     process.exit(0)
   }
-
   if (args.find((arg) => arg === '--source' || arg === '-s')) {
-    if (
-      args[args.indexOf('--source') + 1] === undefined ||
-      args[args.indexOf('-s') + 1] === undefined
-    ) {
-      process.stdout.write(
-        `--source | -s [dir] select the source file or directory \n`
-      )
-    } else if (args[args.indexOf('-s') + 1].endsWith('.csv')) {
-      this.source = args[args.indexOf('-s') + 1]
-      this.tableName = this.source.split('/').pop().split('.')[0].toLowerCase()
-      console.log(`source: ${this.source}`)
-    }
+    this.source =
+      args[args.indexOf('--source') + 1] || args[args.indexOf('-s') + 1]
+
+    // for now get table name fro source file name
+    this.tableName = this.source.split('/').pop().split('.')[0].toLowerCase()
+  }
+
+  if (this.source.endsWith('.csv')) {
+    this.tableName = this.source.split('/').pop().split('.')[0].toLowerCase()
+    console.log(`source: ${this.source}`)
+  } else {
+    process.stdout.write(`Please include a valid csv file path`)
+    process.exit(1)
   }
 
   fs.access(this.source, fs.constants.R_OK | fs.constants.W_OK, (err) => {
@@ -66,11 +63,12 @@ Usage:
   const isNumber = /^[0-9]+$/
   const isBoolean = /^(true|false)$/
   const isEmpty = /^$/
-  const isDecimal = /^[0-9]+\.[0-9]+$/
+  //   const isDecimal = /^[0-9]+\.[0-9]+$/
 
   let count = 0
   this.statement = ''
 
+  // splits the stream so each chunk is a line
   const stream = fs.createReadStream(this.source).pipe(split2())
 
   stream
@@ -83,7 +81,6 @@ Usage:
           }
         })
       }
-
       // if column meta is given then remove this
       if (count === 1) {
         line.split(',').forEach((val, index) => {
@@ -100,7 +97,6 @@ Usage:
           //     this.headers[index].type = 'TEXT'
           //   }
         })
-        console.log(this)
       } else {
         const values = line.split(',').map((val) => {
           switch (val) {
@@ -138,6 +134,7 @@ Usage:
         if (err) throw err
         console.log('SQL file created')
       })
+      stream.destroy()
     })
     .once('readable', () => {
       emitter.emit('start')

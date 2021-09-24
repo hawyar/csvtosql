@@ -2670,11 +2670,7 @@ Usage:
   	--version | -v [dir] get the current version
   	
 `);
-  if (args.length < 3) {
-    usage();
-    process.exit(1);
-  }
-  if (args.find((arg) => arg === "--help" || arg === "-h")) {
+  if (args.length < 3 || args.find((arg) => arg === "--help" || arg === "-h")) {
     usage();
     process.exit(0);
   }
@@ -2683,15 +2679,17 @@ Usage:
 `);
     process.exit(0);
   }
+  console.log(args);
   if (args.find((arg) => arg === "--source" || arg === "-s")) {
-    if (args[args.indexOf("--source") + 1] === void 0 || args[args.indexOf("-s") + 1] === void 0) {
-      process.stdout.write(`--source | -s [dir] select the source file or directory 
-`);
-    } else if (args[args.indexOf("-s") + 1].endsWith(".csv")) {
-      this.source = args[args.indexOf("-s") + 1];
-      this.tableName = this.source.split("/").pop().split(".")[0].toLowerCase();
-      console.log(`source: ${this.source}`);
-    }
+    this.source = args[args.indexOf("--source") + 1] || args[args.indexOf("-s") + 1];
+    this.tableName = this.source.split("/").pop().split(".")[0].toLowerCase();
+  }
+  if (this.source.endsWith(".csv")) {
+    this.tableName = this.source.split("/").pop().split(".")[0].toLowerCase();
+    console.log(`source: ${this.source}`);
+  } else {
+    process.stdout.write(`Please include a valid csv file path`);
+    process.exit(1);
   }
   fs.access(this.source, fs.constants.R_OK | fs.constants.W_OK, (err) => {
     if (this.source === void 0 || err) {
@@ -2703,7 +2701,6 @@ Usage:
   const isNumber = /^[0-9]+$/;
   const isBoolean = /^(true|false)$/;
   const isEmpty = /^$/;
-  const isDecimal = /^[0-9]+\.[0-9]+$/;
   let count = 0;
   this.statement = "";
   const stream = fs.createReadStream(this.source).pipe(split2());
@@ -2720,7 +2717,6 @@ Usage:
       line.split(",").forEach((val, index) => {
         this.headers[index].type = "TEXT";
       });
-      console.log(this);
     } else {
       const values = line.split(",").map((val) => {
         switch (val) {
@@ -2751,6 +2747,7 @@ Usage:
         throw err;
       console.log("SQL file created");
     });
+    stream.destroy();
   }).once("readable", () => {
     emitter.emit("start");
   }).on("error", (err) => {

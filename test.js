@@ -31,7 +31,7 @@ tap.test('convert csv to sqlite', async (t) => {
   const fileSrc = 'DE1_0_2009_Beneficiary_Summary_File_Sample_1.csv'
 
   const { stdout, err } = await execPromisified(
-    `node build/csvtosql -s example/${fileSrc}`
+    `node build/csvtosql --source example/${fileSrc}`
   )
 
   console.log(stdout)
