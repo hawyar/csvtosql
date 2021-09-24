@@ -10,8 +10,9 @@ const emitter = new events.EventEmitter()
     args: process.argv,
   }
 
-  emitter.on('start', () => console.log('starting conversion'))
   csvtosql.call(ctx)
+
+  emitter.on('start', () => console.log('starting conversion'))
 })()
 
 async function csvtosql() {
@@ -65,6 +66,7 @@ Usage:
   const isNumber = /^[0-9]+$/
   const isBoolean = /^(true|false)$/
   const isEmpty = /^$/
+  const isDecimal = /^[0-9]+\.[0-9]+$/
 
   let count = 0
   this.statement = ''
@@ -76,14 +78,31 @@ Usage:
       if (count === 0) {
         this.headers = line.split(',').map((col) => {
           return {
-            type: 'TEXT',
-            name: col.toLowerCase(),
+            name: removeQuotes(col.toLowerCase()),
+            type: '',
           }
         })
+      }
+
+      // if column meta is given then remove this
+      if (count === 1) {
+        line.split(',').forEach((val, index) => {
+          this.headers[index].type = 'TEXT'
+          //   if (isNumber.test(val)) {
+          //     this.headers[index].type = 'INTEGER'
+          //   } else if (isBoolean.test(val)) {
+          //     this.headers[index].type = 'BOOLEAN'
+          //   } else if (isEmpty.test(val)) {
+          //     this.headers[index].type = 'TEXT'
+          //   } else if (isDecimal.test(val)) {
+          //     this.headers[index].type = 'REAL'
+          //   } else {
+          //     this.headers[index].type = 'TEXT'
+          //   }
+        })
+        console.log(this)
       } else {
         const values = line.split(',').map((val) => {
-          const removeQuotes = (str) => str.trim().replace(/^"(.*)"$/, '$1')
-
           switch (val) {
             case val.match(isEmpty):
               return 'NULL'
@@ -134,6 +153,8 @@ Usage:
     const create = `CREATE TABLE IF NOT EXISTS ${this.tableName} (${columns})`
     return `${create};\n${this.statement}`
   }
+
+  const removeQuotes = (str) => str.trim().replace(/^"(.*)"$/, '$1')
 }
 
 module.exports = csvtosql

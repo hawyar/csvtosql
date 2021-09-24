@@ -2634,8 +2634,6 @@ var require_package = __commonJS({
       author: "hawyar",
       license: "ISC",
       devDependencies: {
-        "@swc/cli": "^0.1.50",
-        "@swc/core": "^1.2.89",
         eslint: "^7.32.0",
         tap: "^15.0.9"
       },
@@ -2658,8 +2656,8 @@ var emitter = new events.EventEmitter();
     _init: new Date(),
     args: process.argv
   };
-  emitter.on("start", () => console.log("starting conversion"));
   csvtosql.call(ctx);
+  emitter.on("start", () => console.log("starting conversion"));
 })();
 async function csvtosql() {
   const { args } = this;
@@ -2705,6 +2703,7 @@ Usage:
   const isNumber = /^[0-9]+$/;
   const isBoolean = /^(true|false)$/;
   const isEmpty = /^$/;
+  const isDecimal = /^[0-9]+\.[0-9]+$/;
   let count = 0;
   this.statement = "";
   const stream = fs.createReadStream(this.source).pipe(split2());
@@ -2712,13 +2711,18 @@ Usage:
     if (count === 0) {
       this.headers = line.split(",").map((col) => {
         return {
-          type: "TEXT",
-          name: col.toLowerCase()
+          name: removeQuotes(col.toLowerCase()),
+          type: ""
         };
       });
+    }
+    if (count === 1) {
+      line.split(",").forEach((val, index) => {
+        this.headers[index].type = "TEXT";
+      });
+      console.log(this);
     } else {
       const values = line.split(",").map((val) => {
-        const removeQuotes = (str) => str.trim().replace(/^"(.*)"$/, "$1");
         switch (val) {
           case val.match(isEmpty):
             return "NULL";
@@ -2758,5 +2762,6 @@ Usage:
     return `${create};
 ${this.statement}`;
   };
+  const removeQuotes = (str) => str.trim().replace(/^"(.*)"$/, "$1");
 }
 module.exports = csvtosql;
