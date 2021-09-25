@@ -2679,7 +2679,6 @@ Usage:
 `);
     process.exit(0);
   }
-  console.log(args);
   if (args.find((arg) => arg === "--source" || arg === "-s")) {
     this.source = args[args.indexOf("--source") + 1] || args[args.indexOf("-s") + 1];
     this.tableName = this.source.split("/").pop().split(".")[0].toLowerCase();
@@ -2691,13 +2690,6 @@ Usage:
     process.stdout.write(`Please include a valid csv file path`);
     process.exit(1);
   }
-  fs.access(this.source, fs.constants.R_OK | fs.constants.W_OK, (err) => {
-    if (this.source === void 0 || err) {
-      throw new Error(`${this.source} is not readable or writable 
- ${err}
-`);
-    }
-  });
   const isNumber = /^[0-9]+$/;
   const isBoolean = /^(true|false)$/;
   const isEmpty = /^$/;

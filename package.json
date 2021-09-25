@@ -1,11 +1,12 @@
 {
   "name": "csvtosql",
   "version": "1.0.0",
-  "description": "Convert csv to sql",
+  "description": "Convert csv to sqlite",
   "main": "csvtosql.js",
   "scripts": {
     "lint": "npx eslint csvtosql.js",
     "test": "tap --no-coverage --reporter=specy -J --color",
+    "build:binary": "pkg package.json",
     "test:coverage": "npm test -- --coverage-report=html",
     "dump:sqlite": "sqlite3 example/de1_0_2009_beneficiary_summary_file_sample_1.db -init example/de1_0_2009_beneficiary_summary_file_sample_1.sql",
     "build": "esbuild csvtosql.js --bundle --platform=node --target=node10.4 --outfile=build/csvtosql.js"
@@ -20,5 +21,9 @@
   "dependencies": {
     "esbuild": "^0.13.1",
     "split2": "^3.2.2"
-  }
+  },
+   "pkg": {
+    "outputPath": "build/binary"
+  },
+  "bin": "build/csvtosql.js"
 }
