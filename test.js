@@ -4,6 +4,8 @@ const util = require('util')
 const pkjson = require('./package.json')
 const csvtosql = require('./build/csvtosql.min.js')
 
+// just cruising tests for now
+
 tap.test('cli help', async (t) => {
   t.plan(1)
 
@@ -12,13 +14,13 @@ ${pkjson.name} v${pkjson.version}
 ${pkjson.description}
 
 Usage:
-	csvtosql [options] <source>
+  csvtosql [options] <source>
 
-	Options:
-  		--source [file] select the source file or directory
-  		--help get help
-  		--version, get the current version
-  	\n`
+  Options:
+      --source [file] select the source file or directory
+      --help get help
+      --version, get the current version
+    \n`
   const execPromisified = util.promisify(exec)
 
   const { stdout: found, err } = await execPromisified(
@@ -31,34 +33,34 @@ Usage:
   t.same(found, wanted)
 })
 
-tap.test('cli - convert csv to sqlite', async (t) => {
-  t.plan(1)
+// tap.test('cli - convert csv to sqlite', async (t) => {
+//   t.plan(1)
 
-  const execPromisified = util.promisify(exec)
+//   const execPromisified = util.promisify(exec)
 
-  const fileSrc = 'DE1_0_2009_Beneficiary_Summary_File_Sample_1.csv'
+//   const src = 'example/sample.csv'
 
-  const { stdout, err } = await execPromisified(
-    `build/binary/csvtosql-macos --source example/${fileSrc}`
-  )
+//   const { stdout, err } = await execPromisified(
+//     `build/binary/csvtosql-macos --source ${src}`
+//   )
 
-  if (err) {
-    console.error(`exec error: ${err}`)
-  }
+//   if (err) {
+//     console.error(`exec error: ${err}`)
+//   }
 
-  console.log(stdout)
+//   console.log(stdout)
 
-  t.pass('passing thru')
-})
+//   t.pass('passing thru')
+// })
 
 tap.test('js module - convert csv to sqlite', async (t) => {
   t.plan(1)
 
-  const fileSrc = 'example/DE1_0_2009_Beneficiary_Summary_File_Sample_1.csv'
+  const src = 'example/sample.csv'
 
   const res = await csvtosql({
-    source: fileSrc,
-    table: 'beneficiary_summary_file',
+    source: src,
+    table: 'sample',
   }).catch((err) => {
     console.error(err)
   })

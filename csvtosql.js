@@ -114,8 +114,8 @@ async function csvtosql(ctx) {
             return `CREATE TABLE IF NOT EXISTS ${table} (${columns}); \n`
           }
 
-          result.sql += create()
           writeStream.write(create())
+          result.sql += create()
         }
 
         const values = line.split(',').map((val) => {
@@ -139,11 +139,10 @@ async function csvtosql(ctx) {
           (col) => col.name
         )}) VALUES (${values}); \n`
 
-        if (process.argv.length > 2) {
-          writeStream.write(insert)
-        } else {
-          result.sql += insert
-        }
+        writeStream.write(insert)
+
+        result.sql += insert
+
         count++
       })
       .on('end', () => {
@@ -153,8 +152,9 @@ async function csvtosql(ctx) {
 
         writeStream.end()
 
+        stream.destroy()
+
         if (process.argv.length > 2) {
-          stream.destroy()
           process.exit(0)
         }
         resolve(result)

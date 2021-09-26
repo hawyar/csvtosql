@@ -1,9 +1,8 @@
 
 # csvtosql
+![tests](https://github.com/hawyar/csvtosql/actions/workflows/test.yaml/badge.svg)
 
 Converts a `.csv` file to a `.sql`
-
-![tests](https://github.com/hawyar/csvtosql/actions/workflows/test.yaml/badge.svg)
 
 
 ## Builds
