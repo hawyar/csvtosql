@@ -2,7 +2,7 @@
   "name": "csvtosql",
   "version": "1.0.0",
   "main": "csvtosql.js",
-  "description": "Convert CSV to SQLite",
+  "description": "convert csv to sqlite",
   "scripts": {
     "lint": "npx eslint csvtosql.js",
     "test": "tap --no-coverage --reporter=specy -J --color",
@@ -26,5 +26,5 @@
    "pkg": {
     "outputPath": "build/binary"
   },
-  "bin": "build/csvtosql.js"
+  "bin": "build/csvtosql.min.js"
 }
