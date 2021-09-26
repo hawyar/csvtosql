@@ -3,7 +3,7 @@
 
 Converts a `.csv` file to a `.sql`
 
-![test](https://github.com/hawyar/csvtosql/actions/workflows/test.yml/badge.svg)
+![tests](https://github.com/hawyar/csvtosql/actions/workflows/test.yaml/badge.svg)
 
 
 ## Builds
