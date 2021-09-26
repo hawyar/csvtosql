@@ -8,17 +8,21 @@ tap.test('cli help', async (t) => {
   t.plan(1)
 
   const wanted = ` 
-	${pkjson.name} v${pkjson.version}
-	${pkjson.description}
+${pkjson.name} v${pkjson.version}
+${pkjson.description}
+
 Usage:
-  	--source | -s [dir] select the source file or directory
-  	--help | -h [dir] get help
-  	--version | -v [dir] get the current version
+	csvtosql [options] <source>
+
+	Options:
+  		--source [file] select the source file or directory
+  		--help get help
+  		--version, get the current version
   	\n`
   const execPromisified = util.promisify(exec)
 
   const { stdout: found, err } = await execPromisified(
-    `build/binary/csvtosql-macos -h`
+    `build/binary/csvtosql-macos --help`
   )
 
   if (err) {
@@ -38,11 +42,11 @@ tap.test('cli - convert csv to sqlite', async (t) => {
     `build/binary/csvtosql-macos --source example/${fileSrc}`
   )
 
-  console.log(stdout)
-
   if (err) {
     console.error(`exec error: ${err}`)
   }
+
+  console.log(stdout)
 
   t.pass('passing thru')
 })
@@ -55,6 +59,7 @@ tap.test('js module - convert csv to sqlite', async (t) => {
   const res = await csvtosql({
     source: fileSrc,
     table: 'beneficiary_summary_file',
+    destination: './test.sql',
   }).catch((err) => {
     console.error(err)
   })
