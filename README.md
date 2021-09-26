@@ -42,9 +42,10 @@ then use the sql file generated above to import the data into your database
 ```bash
 sqlite3 <path_to_local_file>.db -init <path_to_file_generated_above>.sql
 ```
+**make sure you [sqlite3](https://www.sqlite.org/download.html) is available**
 
 
-### Or use the JS module
+### Or use as a JS module
 
 ```bash
 const csvtosql = require('csvtosql');

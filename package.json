@@ -4,13 +4,11 @@
   "main": "csvtosql.js",
   "description": "convert csv to sqlite",
   "scripts": {
-    "lint": "npx eslint csvtosql.js",
     "test": "tap --no-coverage --reporter=specy -J --color",
-    "test:coverage": "npm test -- --coverage-report=html",
+	"build": "npm run build:node && npm run build:binary",
     "build:node": "esbuild csvtosql.js --bundle --minify --platform=node --target=node10.4 --outfile=build/csvtosql.min.js",
     "build:binary": "pkg package.json",
-	"build": "npm run build:node && npm run build:binary",
-    "dump:sqlite": "sqlite3 example/sample1.db -init example/sample1.sql"
+    "dump:sqlite": "sqlite3 example/sample.db -init example/sample.sql"
   },
   "keywords": ["csv", "sqlite"],
   "author": "hawyar",

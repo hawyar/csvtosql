@@ -33,37 +33,36 @@ Usage:
   t.same(found, wanted)
 })
 
-// tap.test('cli - convert csv to sqlite', async (t) => {
-//   t.plan(1)
-
-//   const execPromisified = util.promisify(exec)
-
-//   const src = 'example/sample.csv'
-
-//   const { stdout, err } = await execPromisified(
-//     `build/binary/csvtosql-macos --source ${src}`
-//   )
-
-//   if (err) {
-//     console.error(`exec error: ${err}`)
-//   }
-
-//   console.log(stdout)
-
-//   t.pass('passing thru')
-// })
-
-tap.test('js module - convert csv to sqlite', async (t) => {
+tap.test('cli - convert csv to sqlite', async (t) => {
   t.plan(1)
+
+  const execPromisified = util.promisify(exec)
 
   const src = 'example/sample.csv'
 
-  const res = await csvtosql({
-    source: src,
-    table: 'sample',
-  }).catch((err) => {
-    console.error(err)
-  })
+  const { stdout: found, err } = await execPromisified(
+    `build/binary/csvtosql-macos --source ${src}`
+  )
 
-  t.ok(res)
+  if (err) {
+    console.error(`exec error: ${err}`)
+  }
+
+  console.log(found)
+  t.ok(found)
 })
+
+// tap.test('js module - convert csv to sqlite', async (t) => {
+//   t.plan(1)
+
+//   const src = 'example/sample.csv'
+
+//   const res = await csvtosql({
+//     source: src,
+//     table: 'sample',
+//   }).catch((err) => {
+//     console.error(err)
+//   })
+
+//   t.ok(res)
+// })
