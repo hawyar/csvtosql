@@ -10,13 +10,13 @@ ${pkjson.name} v${pkjson.version}
 ${pkjson.description}
 
 Usage:
-	csvtosql [options] <source>
+  csvtosql [options] <source>
 
-	Options:
-  		--source [file] select the source file or directory
-  		--help get help
-  		--version, get the current version
-  	\n`
+  Options:
+      --source [file] select the source file or directory
+      --help get help
+      --version, get the current version
+    \n`
   // if used thru cli
   if (process.argv.length > 2) {
     let ctx = {
@@ -93,9 +93,14 @@ async function csvtosql(ctx) {
         // get first row (column headers)
         if (count === 0) {
           result.headers = line.split(',').map((col) => {
+            const cleaned = col
+              .trim()
+              .replace(/[^a-zA-Z0-9]/g, '')
+              .toLowerCase()
+
             return {
-              name: removeQuotes(col.toLowerCase()),
-              type: 'TEXT', // maybe ask for column meta for accurate types
+              name: cleaned,
+              type: 'TEXT', // maybe ask for column meta for better types
             }
           })
 
@@ -106,9 +111,10 @@ async function csvtosql(ctx) {
                   ? `${col.name.replace(/\n/g, '')} ${col.type}`
                   : ` ${col.name.replace(/\n/g, '')} ${col.type}` // add a space between each column
             )
-            return `CREATE TABLE IF NOT EXISTS ${table} (${columns})`
+            return `CREATE TABLE IF NOT EXISTS ${table} (${columns}); \n`
           }
-          result.sql += create() + ';\n'
+
+          result.sql += create()
           writeStream.write(create())
         }
 
@@ -131,7 +137,7 @@ async function csvtosql(ctx) {
 
         const insert = `INSERT INTO ${table} (${result.headers.map(
           (col) => col.name
-        )}) VALUES (${values});\n`
+        )}) VALUES (${values}); \n`
 
         if (process.argv.length > 2) {
           writeStream.write(insert)

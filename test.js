@@ -59,7 +59,6 @@ tap.test('js module - convert csv to sqlite', async (t) => {
   const res = await csvtosql({
     source: fileSrc,
     table: 'beneficiary_summary_file',
-    destination: './test.sql',
   }).catch((err) => {
     console.error(err)
   })
