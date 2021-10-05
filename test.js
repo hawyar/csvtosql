@@ -2,10 +2,9 @@ const tap = require('tap')
 const { exec } = require('child_process')
 const util = require('util')
 const pkjson = require('./package.json')
-const csvtosql = require('./build/csvtosql.min.js')
+// const csvtosql = require('./build/csvtosql.min.js')
 
 // just cruising tests for now
-
 tap.test('cli help', async (t) => {
   t.plan(1)
 
@@ -24,7 +23,7 @@ Usage:
   const execPromisified = util.promisify(exec)
 
   const { stdout: found, err } = await execPromisified(
-    `build/binary/csvtosql-macos --help`
+    `build/csvtosql-macos --help`
   )
 
   if (err) {
@@ -41,7 +40,7 @@ tap.test('cli - convert csv to sqlite', async (t) => {
   const src = 'example/sample.csv'
 
   const { stdout: found, err } = await execPromisified(
-    `build/binary/csvtosql-macos --source ${src}`
+    `build/csvtosql-macos --source ${src}`
   )
 
   if (err) {

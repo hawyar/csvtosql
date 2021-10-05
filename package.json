@@ -8,7 +8,7 @@
     "build": "npm run build:node && npm run build:binary",
     "build:node": "esbuild csvtosql.js --bundle --minify --platform=node --target=node10.4 --outfile=build/csvtosql.min.js",
     "build:binary": "pkg package.json",
-    "dump:sqlite": "sqlite3 example/sample.db -init example/sample.sql"
+    "create": "sqlite3 example/sample.db -init example/sample.sql"
   },
   "keywords": [
     "csv",
@@ -25,7 +25,7 @@
     "split2": "^3.2.2"
   },
   "pkg": {
-    "outputPath": "build/binary"
+    "outputPath": "build"
   },
   "bin": "build/csvtosql.min.js"
 }

@@ -2,13 +2,13 @@ const fs = require('fs')
 const split2 = require('split2')
 const events = require('events')
 const pkjson = require('./package.json')
-const emitter = new events.EventEmitter() // for better progress logging later
-
+const emitter = new events.EventEmitter()
+const { spawn } = require('child_process')
 ;(() => {
   const usage = ` 
 ${pkjson.name} v${pkjson.version}
 ${pkjson.description}
-
+c
 Usage:
   csvtosql [options] <source>
 
@@ -38,11 +38,15 @@ Usage:
 
     if (argv.find((arg) => arg === '--source')) {
       ctx.source = argv[argv.indexOf('--source') + 1]
-
       if (argv.find((arg) => arg === '--table')) {
         ctx.table = argv[argv.indexOf('--table') + 1]
       } else {
-        ctx.table = ctx.source.split('/').pop().split('.')[0].toLowerCase()
+        ctx.table = ctx.source
+          .split('/')
+          .pop()
+          .split('.')[0]
+          .toLowerCase()
+          .replace(/\s/g, '_')
       }
 
       console.log(`source: ${ctx.source}`)
@@ -77,15 +81,15 @@ async function csvtosql(ctx) {
     }
   })
 
-  const isNumber = /^[0-9]+$/
-  const isBoolean = /^(true|false)$/
-  const isEmpty = /^$/
+  //   const isNumber = /^[0-9]+$/
+  //   const isBoolean = /^(true|false)$/
+  //   const isEmpty = /^$/
   //   const isDecimal = /^[0-9]+\.[0-9]+$/
 
   let count = 0
 
   const stream = fs.createReadStream(source).pipe(split2()) // splits the stream so each chunk is a line
-  const writeStream = fs.createWriteStream(`example/${table}.sql`) // creates a write stream to write the sql to
+  const writeStream = fs.createWriteStream(`${table}.sql`) // creates a write stream to write the sql to
 
   return new Promise((resolve, reject) => {
     stream
@@ -93,10 +97,7 @@ async function csvtosql(ctx) {
         // get first row (column headers)
         if (count === 0) {
           result.headers = line.split(',').map((col) => {
-            const cleaned = col
-              .trim()
-              .replace(/[^a-zA-Z0-9]/g, '')
-              .toLowerCase()
+            const cleaned = col.split(' ').join('_').toLowerCase()
 
             return {
               name: cleaned,
@@ -119,20 +120,12 @@ async function csvtosql(ctx) {
         }
 
         const values = line.split(',').map((val) => {
-          const cleaned = removeQuotes(val)
-          switch (val) {
-            case val.match(isEmpty):
-              return 'NULL'
-
-            case val.match(isNumber):
-              return `'${cleaned}'`
-
-            case val.match(isBoolean):
-              return `'${cleaned}'`
-
-            default:
-              return `'${cleaned}'`
+          if (val.includes("'")) {
+            return `"${val}"`
+          } else if (val.includes('"')) {
+            return `'${val}'`
           }
+          return `'${val}'`
         })
 
         const insert = `INSERT INTO ${table} (${result.headers.map(
@@ -155,6 +148,29 @@ async function csvtosql(ctx) {
         stream.destroy()
 
         if (process.argv.length > 2) {
+          //   const init = spawn('sqlite3', [
+          //     `${source}.db`,
+          //     '-init',
+          //     `${table}.sql`,
+          //   ])
+
+          //   init.stdout.on('data', (data) => {
+          //     console.log(data)
+          //   })
+
+          //   init.stderr.on('data', (data) => {
+          //     console.error(data)
+          //   })
+
+          //   init.on('close', (code) => {
+          //     if (code === 0) {
+          //       console.log(`${table}.db created`)
+          //     } else {
+          //       console.error(
+          //         `${table}.db could not be created: failed with code: ${code}`
+          //       )
+          //     }
+          //   })
           process.exit(0)
         }
         resolve(result)
@@ -169,7 +185,5 @@ async function csvtosql(ctx) {
         }
         reject(err)
       })
-
-    const removeQuotes = (str) => str.trim().replace(/^"(.*)"$/, '$1')
   })
 }
