@@ -2,18 +2,16 @@
 # csvtosql
 ![tests](https://github.com/hawyar/csvtosql/actions/workflows/test.yaml/badge.svg)
 
-Converts a `.csv` file to a `.sql`
-
 
 ## Builds
 
-All builds are located in the `builds` folder. **You don't need Node.js to run the executables**
+All builds are located in the `build` folder. **You don't need Node.js to run the executables**
 
-- minified: `builds/csvtosql.min.js`
-- executable: 
-	- linux: `builds/csvtosql-linux`
-	- windows: `builds/csvtosql-win.exe`
-	- macos: `builds/csvtosql-macos`
+- minified JS module: `build/csvtosql.min.js`
+- executables: 
+	- linux: `build/csvtosql-linux`
+	- windows: `build/csvtosql-win.exe`
+	- macos: `build/csvtosql-macos`
 
 
 ## Usage
@@ -26,23 +24,22 @@ git clone https://github.com/hawyar/csvtosql.git
 check if executable runs:
 
 ```bash
-build/binary/csvtosql-macos -v
+build/csvtosql-macos -v
 ```
 **make sure you choose the right executable for your OS**
 
 
-convert a file
+make a conversion
 
 ```bash
-build/binary/csvtosql-macos --source <path_to_csv_file>
+build/csvtosql-macos --source <path_to_csv_file>
 ```
 
-then use the sql file generated above to import the data into your database
+you get back two files:
+- `.sql` this is the generated SQL file
+- `.db` this is the sqlite db file ready to be used with sqlite3
 
-```bash
-sqlite3 <path_to_local_file>.db -init <path_to_file_generated_above>.sql
-```
-**make sure you [sqlite3](https://www.sqlite.org/download.html) is available**
+**make sure you have [sqlite3](https://www.sqlite.org/download.html) installed**
 
 
 ### Or use as a JS module
@@ -57,12 +54,19 @@ const result = await csvtosql({
     console.error(err)
   })
 
-  // you might want to then write it to a file
+  // You might want to then write it to a file
   fs.writeFileSync('path_to_file_generated_above.sql', result.sql)
 ```
 
-## CLI
+Note:  Using the JS module doesn't create the sqlite db for you. You can easily do it yourself by using the generated `.sql` file.
+
+
+```bash
+sqlite3 <any_path_you_like>.db -init <path_to_sql_file>
 ```
+
+## CLI
+```bash
 csvtosql v1.0.0
 convert csv to sqlite
 
