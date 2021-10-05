@@ -7,8 +7,7 @@
     "test": "tap --no-coverage --reporter=specy -J --color",
     "build": "npm run build:node && npm run build:binary",
     "build:node": "esbuild csvtosql.js --bundle --minify --platform=node --target=node10.4 --outfile=build/csvtosql.min.js",
-    "build:binary": "pkg package.json",
-    "create": "sqlite3 example/sample.db -init example/sample.sql"
+    "build:binary": "pkg package.json"
   },
   "keywords": [
     "csv",

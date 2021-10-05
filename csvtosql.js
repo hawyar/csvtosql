@@ -8,7 +8,7 @@ const { spawn } = require('child_process')
   const usage = ` 
 ${pkjson.name} v${pkjson.version}
 ${pkjson.description}
-c
+
 Usage:
   csvtosql [options] <source>
 
@@ -89,7 +89,7 @@ async function csvtosql(ctx) {
   let count = 0
 
   const stream = fs.createReadStream(source).pipe(split2()) // splits the stream so each chunk is a line
-  const writeStream = fs.createWriteStream(`${table}.sql`) // creates a write stream to write the sql to
+  const writeStream = fs.createWriteStream(`${source.split('.')[0]}.sql`) // creates a write stream to write the sql to
 
   return new Promise((resolve, reject) => {
     stream
@@ -148,29 +148,30 @@ async function csvtosql(ctx) {
         stream.destroy()
 
         if (process.argv.length > 2) {
-          //   const init = spawn('sqlite3', [
-          //     `${source}.db`,
-          //     '-init',
-          //     `${table}.sql`,
-          //   ])
+          const sourceAndDest = source.split('.')[0]
+          const init = spawn('sqlite3', [
+            `${sourceAndDest}.db`,
+            '-init',
+            `${sourceAndDest}.sql`,
+          ])
 
-          //   init.stdout.on('data', (data) => {
-          //     console.log(data)
-          //   })
+          init.stdout.on('data', (data) => {
+            console.log(data)
+          })
 
-          //   init.stderr.on('data', (data) => {
-          //     console.error(data)
-          //   })
+          init.stderr.on('data', (data) => {
+            console.error(data)
+          })
 
-          //   init.on('close', (code) => {
-          //     if (code === 0) {
-          //       console.log(`${table}.db created`)
-          //     } else {
-          //       console.error(
-          //         `${table}.db could not be created: failed with code: ${code}`
-          //       )
-          //     }
-          //   })
+          init.on('close', (code) => {
+            if (code === 0) {
+              console.log(`${table}.db created`)
+            } else {
+              console.error(
+                `${table}.db could not be created: failed with code: ${code}`
+              )
+            }
+          })
           process.exit(0)
         }
         resolve(result)
