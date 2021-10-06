@@ -3,7 +3,9 @@ const split2 = require('split2')
 const events = require('events')
 const pkjson = require('./package.json')
 const emitter = new events.EventEmitter()
-const { spawn } = require('child_process')
+const util = require('util')
+const { execSync } = require('child_process')
+const exec = util.promisify(require('child_process').exec)
 ;(() => {
   const usage = ` 
 ${pkjson.name} v${pkjson.version}
@@ -73,6 +75,7 @@ async function csvtosql(ctx) {
   let result = {
     headers: [],
     sql: '',
+    columns: '',
   }
 
   fs.access(source, fs.constants.R_OK | fs.constants.W_OK, (err) => {
@@ -105,37 +108,56 @@ async function csvtosql(ctx) {
             }
           })
 
-          const create = () => {
-            const columns = result.headers.map(
+          const columns = result.headers
+            .map(
               (col, i) =>
                 i === 0
                   ? `${col.name.replace(/\n/g, '')} ${col.type}`
                   : ` ${col.name.replace(/\n/g, '')} ${col.type}` // add a space between each column
             )
-            return `CREATE TABLE IF NOT EXISTS ${table} (${columns}); \n`
-          }
+            .join(',')
 
-          writeStream.write(create())
-          result.sql += create()
+          writeStream.write(`BEGIN TRANSACTION;\n`)
+
+          writeStream.write(
+            `CREATE TABLE IF NOT EXISTS ${table} (${columns});\n`
+          )
+          //   result.sql += create()
+        } else {
+          const values = line
+            .split(',')
+            .map((val) => {
+              val = val.split('"').join('')
+
+              // check for tokens [, ], (, ), ", ', ;, :, ., +, -, *, /, %, ^, |, &, <, >, =, !, ~, ?, $, #, @, `, {, }, [, ], \\, \, ,
+
+              const token =
+                /[,\[\]\(\)\{\}\:\;\,\.\+\-\*\/\^\|\&\<\>\=\!\~\?\$\#\@\`\{\}\[\\\]\,]/
+
+				
+
+              if (val.includes(',')) {
+                val = `"${val}"`
+              }
+              if (val.includes("'")) {
+                // double the single quotes
+                return val.replace(/'/g, "''")
+              }
+              return `'${val}'`
+            })
+            .join(',')
+
+          const insert = `INSERT INTO ${table} VALUES (${values});\n`
+
+          writeStream.write(insert, (err) => {
+            if (err) {
+              console.log(err)
+            }
+          })
+
+          // if the csv file is v large then this will cause RangeError: Invalid string length
+          // result.sql += insert
         }
-
-        const values = line.split(',').map((val) => {
-          if (val.includes("'")) {
-            return `"${val}"`
-          } else if (val.includes('"')) {
-            return `'${val}'`
-          }
-          return `'${val}'`
-        })
-
-        const insert = `INSERT INTO ${table} (${result.headers.map(
-          (col) => col.name
-        )}) VALUES (${values}); \n`
-
-        writeStream.write(insert)
-
-        result.sql += insert
-
         count++
       })
       .on('end', () => {
@@ -143,35 +165,13 @@ async function csvtosql(ctx) {
         console.log(`${count} lines processed`)
         console.log(`${table}.sql created`)
 
-        writeStream.end()
+        writeStream.write(`COMMIT;\n`)
 
+        writeStream.end()
         stream.destroy()
 
         if (process.argv.length > 2) {
-          const sourceAndDest = source.split('.')[0]
-          const init = spawn('sqlite3', [
-            `${sourceAndDest}.db`,
-            '-init',
-            `${sourceAndDest}.sql`,
-          ])
-
-          init.stdout.on('data', (data) => {
-            console.log(data)
-          })
-
-          init.stderr.on('data', (data) => {
-            console.error(data)
-          })
-
-          init.on('close', (code) => {
-            if (code === 0) {
-              console.log(`${table}.db created`)
-            } else {
-              console.error(
-                `${table}.db could not be created: failed with code: ${code}`
-              )
-            }
-          })
+          createSqliteDb()
           process.exit(0)
         }
         resolve(result)
@@ -187,4 +187,22 @@ async function csvtosql(ctx) {
         reject(err)
       })
   })
+
+  function createSqliteDb() {
+    const sourceAndDest = result.source.split('.')[0]
+
+    exec(
+      `sqlite3 ${sourceAndDest}.db -init ${sourceAndDest}.sql`,
+      (err, stdout, stderr) => {
+        if (err) {
+          console.log(err)
+        }
+
+        if (stderr) {
+          console.error(stderr)
+        }
+        console.log(stdout)
+      }
+    )
+  }
 }
