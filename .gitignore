@@ -3,3 +3,6 @@ node_modules
 localtest
 example/*.db
 example/*.sql
+example/*.sqlite
+example/*.sqlite3
+example/*.sqlite.db
